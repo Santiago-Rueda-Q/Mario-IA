@@ -1,0 +1,10 @@
+--index-url https://download.pytorch.org/whl/cu124
+--extra-index-url https://pypi.org/simple
+torch==2.6.0+cu124
+torchvision==0.21.0+cu124
+gym==0.26.2
+gym-super-mario-bros==7.4.0
+nes-py>=8.2.1
+matplotlib>=3.8.0
+numpy>=1.25.0
+Pillow>=10.0.0
