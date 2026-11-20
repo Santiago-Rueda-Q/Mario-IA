@@ -19,7 +19,7 @@ class Mario:
         # Red neuronal dual (Online y Target)
         self.net = MarioNet(self.state_dim, self.action_dim).float().to(device=self.device)
 
-        # Hiperparametros de exploracion
+        # Hiperparametros de exploracion (Tutorial Oficial)
         self.exploration_rate = 1.0
         self.exploration_rate_decay = 0.99999975
         self.exploration_rate_min = 0.1
@@ -32,7 +32,7 @@ class Mario:
         self.memory = FastReplayBuffer(capacity=100000, device=self.device)
         self.batch_size = 32
 
-        # Descuento y actualizacion DDQN
+        # Descuento y actualizacion DDQN (Tutorial Oficial)
         self.gamma = 0.9
         self.burnin = 1e4        # 10,000 pasos iniciales antes de entrenar
         self.learn_every = 3     # entrenar cada 3 pasos

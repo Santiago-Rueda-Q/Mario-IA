@@ -34,6 +34,7 @@ def play(checkpoint_path, episodes=5, render=True):
         checkpoint_path=checkpoint_path
     )
     # En evaluacion forzamos explotacion pura (sin aleatoriedad)
+    mario.exploration_rate_min = 0.0
     mario.exploration_rate = 0.0
 
     print("=" * 60)

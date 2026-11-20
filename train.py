@@ -27,7 +27,7 @@ def make_mario_env():
     env = CustomFrameStack(env, num_stack=4)
     return env
 
-def train(episodes=40000, checkpoint=None, save_dir=None):
+def train(episodes=40000, checkpoint=None, save_dir=None, override_epsilon=None):
     use_cuda = torch.cuda.is_available()
     print("=" * 60)
     print(" INICIANDO ENTRENAMIENTO DE MARIO RL AGENT (DDQN)")
@@ -52,46 +52,57 @@ def train(episodes=40000, checkpoint=None, save_dir=None):
         save_dir=save_dir,
         checkpoint_path=checkpoint
     )
+
+    if override_epsilon is not None:
+        mario.exploration_rate = float(override_epsilon)
+        print(f"--> Epsilon sobrescrito a: {mario.exploration_rate:.4f}")
+
     logger = MetricLogger(save_dir)
 
-    for e in range(episodes):
-        state, info = env.reset()
+    try:
+        for e in range(episodes):
+            state, info = env.reset()
 
-        while True:
-            action = mario.act(state)
-            next_state, reward, terminated, truncated, info = env.step(action)
-            done = terminated or truncated
+            while True:
+                action = mario.act(state)
+                next_state, reward, terminated, truncated, info = env.step(action)
+                done = terminated or truncated
 
-            # Guardar experiencia en replay memory
-            mario.cache(state, next_state, action, reward, done)
+                # Guardar experiencia en replay memory
+                mario.cache(state, next_state, action, reward, done)
 
-            # Paso de aprendizaje DDQN
-            q, loss = mario.learn()
+                # Paso de aprendizaje DDQN
+                q, loss = mario.learn()
 
-            # Registro de paso
-            logger.log_step(reward, loss, q)
+                # Registro de paso
+                logger.log_step(reward, loss, q)
 
-            state = next_state
+                state = next_state
 
-            if done or info.get("flag_get", False):
-                break
+                if done or info.get("flag_get", False):
+                    break
 
-        logger.log_episode()
+            logger.log_episode()
 
-        # Mostrar y guardar registro cada 20 episodios o en el ultimo
-        if (e % 20 == 0) or (e == episodes - 1):
-            logger.record(episode=e, epsilon=mario.exploration_rate, step=mario.curr_step)
+            # Mostrar y guardar registro cada 20 episodios o en el ultimo
+            if (e % 20 == 0) or (e == episodes - 1):
+                logger.record(episode=e, epsilon=mario.exploration_rate, step=mario.curr_step)
 
-    # Guardar modelo final
+    except KeyboardInterrupt:
+        print("\n\n[!] Entrenamiento pausado manualmente con Ctrl + C.")
+
+    # Guardar modelo al terminar o al presionar Ctrl + C
+    print("Guardando estado actual del modelo...")
     mario.save()
     env.close()
-    print(f"\nEntrenamiento finalizado. Registros y modelos en: {save_dir.resolve()}")
+    print(f"Registros y modelos guardados en: {save_dir.resolve()}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Entrenar agente Mario con DDQN")
     parser.add_argument("--episodes", type=int, default=40000, help="Numero de episodios a entrenar")
     parser.add_argument("--checkpoint", type=str, default=None, help="Ruta de checkpoint para reanudar")
     parser.add_argument("--save-dir", type=str, default=None, help="Directorio donde guardar checkpoints y graficos")
+    parser.add_argument("--epsilon", type=float, default=None, help="Sobrescribir exploration_rate al reanudar (ej. 0.35)")
     args = parser.parse_args()
 
-    train(episodes=args.episodes, checkpoint=args.checkpoint, save_dir=args.save_dir)
+    train(episodes=args.episodes, checkpoint=args.checkpoint, save_dir=args.save_dir, override_epsilon=args.epsilon)
